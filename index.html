@@ -12,16 +12,22 @@
     }
     svg {
       background: white;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
   </style>
 </head>
+
 <body onload="init()">
-  <h2>Mileage vs. Price by Country of Origin</h2>
-  <svg width="900" height="500"></svg>
+  <h2 id="scene-title">Mileage vs. Price by Country of Origin</h2>
+  <p id="scene-desc">Here we can see the relationship between mileage and price for used cars, categorized by country of origin. Each dot represents a vehicle, with color indicating its origin—American, Japanese, German, Korean, or Other. The scatterplot shows a clear downward trend: as mileage increases, price tends to decrease.</p>
+  <button onclick="scene1()">Slide 1</button>
+  <button onclick="scene2()">Slide 2</button>
+  <button onclick="scene3()">Slide 3</button>
+  <svg width="750" height="450"></svg>
   <script>
+
+  let data = [];
   async function init() {
-    const data = await d3.csv('https://Hash6325.github.io/US_cars_preprocessed.csv', d => {
+    data = await d3.csv('https://Hash6325.github.io/US_cars_preprocessed.csv', d => {
       return {
         price: +d.price,
         mileage: +d.mileage,
@@ -31,7 +37,24 @@
         year: +d.year
       };
     });
+    scene1();
 
+  }
+  function scene1(){
+    d3.select("svg").html("");
+    document.getElementById("scene-title").textContent = "Scene 1 Title";
+    document.getElementById("scene-desc").textContent = "Description for scene 1...";
+    
+  }
+  function scene2(){
+    d3.select("svg").html("");
+    document.getElementById("scene-title").textContent = "Scene 2 Title";
+    document.getElementById("scene-desc").textContent = "Description for scene 2...";
+  }
+  function scene3(){
+    d3.select("svg").html("");
+    document.getElementById("scene-title").textContent = "Mileage vs. Price by Country of Origin";
+    document.getElementById("scene-desc").textContent ="Here we can see the relationship between mileage and price for used cars, categorized by country of origin. Each dot represents a vehicle, with color indicating its origin—American, Japanese, German, Korean, or Other. The scatterplot shows a clear downward trend: as mileage increases, price tends to decrease.";
     const svg = d3.select("svg");
     const margin = {top: 40, right: 140, bottom: 60, left: 70};
     const width = +svg.attr("width") - margin.left - margin.right;
