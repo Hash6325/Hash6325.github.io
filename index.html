@@ -15,6 +15,9 @@
 </head>
 
 <body onload="init()">
+  <h1 style="text-align: center; font-family: sans-serif; margin-bottom: 10px;">
+    Exploring the Used Car Market: A Visual Story
+  </h1>
   <h2 id="scene-title">Mileage vs. Price by Country of Origin</h2>
   <p id="scene-desc">Here we can see the relationship between mileage and price for used cars, categorized by country of origin. Each dot represents a vehicle, with color indicating its origin—American, Japanese, German, Korean, or Other. The scatterplot shows a clear downward trend: as mileage increases, price tends to decrease.</p>
   <button onclick="scene1()">Slide 1</button>
@@ -59,7 +62,7 @@
     d3.select("svg").html("");
        document.getElementById("filters").style.display = "none";
     document.getElementById("scene-title").textContent = "Car Origin Distribution";
-    document.getElementById("scene-desc").textContent = "This pie chart shows the percentage of used cars by country of origin.";
+    document.getElementById("scene-desc").textContent = "This pie chart offers an overview of the distribution of used cars in the dataset used for this analysis, categorized by country of origin. Each slice represents a different origin group—American, Japanese, German, Korean, or Other—proportional to its presence in the dataset. It is clear that American car brands dominate this dataset and most of the remaining is made up of Japanese brands. A small percentage comes from Germany and Korea as well.";
 
     const svg = d3.select("svg");
     const width = +svg.attr("width");
@@ -304,8 +307,7 @@ function scene3(){
   d3.select("svg").html("");
   document.getElementById("filters").style.display = "none";
   document.getElementById("scene-title").textContent = "Mileage vs. Price by Country of Origin";
-  document.getElementById("scene-desc").textContent =
-    "Here we can see the relationship between mileage and price for used cars, categorized by country of origin. Each dot represents a vehicle, with color indicating its origin—American, Japanese, German, Korean, or Other. The scatterplot shows a clear downward trend: as mileage increases, price tends to decrease.";
+  document.getElementById("scene-desc").textContent = "Here we can see the relationship between mileage and price for used cars, categorized by country of origin. Each dot represents a vehicle, with color indicating its origin—American, Japanese, German, Korean, or Other. The scatterplot shows a clear downward trend: as mileage increases, price tends to decrease.";
 
   const svg = d3.select("svg");
   const margin = {top: 40, right: 140, bottom: 60, left: 70};
