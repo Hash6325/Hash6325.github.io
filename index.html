@@ -15,6 +15,13 @@
       background: white;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
+    .legend {
+      font-size: 14px;
+    }
+    .legend rect {
+      stroke-width: 1;
+      stroke: #ccc;
+    }
   </style>
 </head>
 <body onload="init()">
@@ -80,6 +87,28 @@
       .attr("r", 3)
       .attr("fill", d => color(d.origin))
       .attr("opacity", 0.6);
+
+    // Add legend
+    const legend = svg.append("g")
+      .attr("class", "legend")
+      .attr("transform", `translate(${width + margin.left + 10}, ${margin.top})`);
+
+    const origins = color.domain();
+
+    origins.forEach((origin, i) => {
+      const row = legend.append("g")
+        .attr("transform", `translate(0, ${i * 20})`);
+
+      row.append("rect")
+        .attr("width", 12)
+        .attr("height", 12)
+        .attr("fill", color(origin));
+
+      row.append("text")
+        .attr("x", 18)
+        .attr("y", 10)
+        .text(origin);
+    });
 
     // Optional annotation for a specific point
     const topToyota = data.find(d => d.brand.toLowerCase() === "toyota" && d.model.toLowerCase().includes("cruiser"));
