@@ -7,20 +7,12 @@
   <script src="https://unpkg.com/d3-annotation@2.5.1/dist/d3-annotation.min.js"></script>
   <style>
     body {
-      font-family: sans-serif;
-      background: #f5f5f5;
+      background: lightgrey;
       padding: 20px;
     }
     svg {
       background: white;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    .legend {
-      font-size: 14px;
-    }
-    .legend rect {
-      stroke-width: 1;
-      stroke: #ccc;
     }
   </style>
 </head>
@@ -47,21 +39,21 @@
 
     const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
-    const x = d3.scaleLog()
-      .domain([1e3, d3.max(data, d => d.mileage)]).nice()
+    const x = d3.scaleLinear()
+      .domain([0, 400000])
       .range([0, width]);
 
     const y = d3.scaleLinear()
-      .domain([0, d3.max(data, d => d.price)]).nice()
+      .domain([0, d3.max(data, d => d.price)])
       .range([height, 0]);
 
     const color = d3.scaleOrdinal()
       .domain(["American", "Japanese", "German", "Korean", "Other country"])
-      .range(["#1f77b4", "#d62728", "#2ca02c", "#ff7f0e", "#9467bd"]);
+      .range(["blue", "red", "green", "orange", "purple"]);
 
     g.append("g")
       .attr("transform", `translate(0,${height})`)
-      .call(d3.axisBottom(x).ticks(10, "~s"));
+      .call(d3.axisBottom(x));
 
     g.append("g")
       .call(d3.axisLeft(y));
@@ -70,7 +62,7 @@
       .attr("x", width / 2)
       .attr("y", height + 40)
       .attr("text-anchor", "middle")
-      .text("Mileage (log scale)");
+      .text("Mileage");
 
     g.append("text")
       .attr("transform", "rotate(-90)")
@@ -86,11 +78,9 @@
       .attr("cy", d => y(d.price))
       .attr("r", 3)
       .attr("fill", d => color(d.origin))
-      .attr("opacity", 0.6);
+      .attr("opacity", 0.4);
 
-    // Add legend INSIDE the plotting area (top-right)
     const legend = g.append("g")
-      .attr("class", "legend")
       .attr("transform", `translate(${width - 100}, 0)`);
 
     const origins = color.domain();
@@ -109,28 +99,6 @@
         .attr("y", 10)
         .text(origin);
     });
-
-    // Optional annotation for a specific point
-    const topToyota = data.find(d => d.brand.toLowerCase() === "toyota" && d.model.toLowerCase().includes("cruiser"));
-
-    if (topToyota) {
-      const annotations = d3.annotation()
-        .type(d3.annotationLabel)
-        .annotations([{
-          note: {
-            title: "Toyota Cruiser",
-            label: `Mileage: ${Math.round(topToyota.mileage)}, Price: $${Math.round(topToyota.price)}`
-          },
-          x: x(topToyota.mileage) + margin.left,
-          y: y(topToyota.price) + margin.top,
-          dx: 40,
-          dy: -30
-        }]);
-
-      svg.append("g")
-        .attr("class", "annotation-group")
-        .call(annotations);
-    }
   }
   </script>
 </body>
