@@ -41,7 +41,7 @@
     });
 
     const svg = d3.select("svg");
-    const margin = {top: 40, right: 40, bottom: 60, left: 70};
+    const margin = {top: 40, right: 140, bottom: 60, left: 70};
     const width = +svg.attr("width") - margin.left - margin.right;
     const height = +svg.attr("height") - margin.top - margin.bottom;
 
@@ -88,10 +88,10 @@
       .attr("fill", d => color(d.origin))
       .attr("opacity", 0.6);
 
-    // Add legend
-    const legend = svg.append("g")
+    // Add legend INSIDE the plotting area (top-right)
+    const legend = g.append("g")
       .attr("class", "legend")
-      .attr("transform", `translate(${width + margin.left + 10}, ${margin.top})`);
+      .attr("transform", `translate(${width - 100}, 0)`);
 
     const origins = color.domain();
 
