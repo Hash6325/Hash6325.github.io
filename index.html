@@ -1,13 +1,108 @@
+<!DOCTYPE html>
 <html>
-<script src='https://d3js.org/d3.v5.min.js'></script>
-<body onload='init()'>
-<svg width=300 height=300>
-</svg>
-<script>
-async function init() {
-    
-    d3.select("svg").attr("width", 300).attr("height", 300).append("g").attr("transform", "translate(50,50)").attr("fill", "lightblue").attr("stroke", "black");
-}
-</script>
+<head>
+  <meta charset="utf-8">
+  <title>Scene 1 - Mileage vs. Price</title>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src="https://unpkg.com/d3-annotation@2.5.1/dist/d3-annotation.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    svg {
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body onload="init()">
+  <h2>Mileage vs. Price by Country of Origin</h2>
+  <svg width="900" height="500"></svg>
+  <script>
+  async function init() {
+    const data = await d3.csv('https://Hash6325.github.io/US_cars_preprocessed.csv', d => {
+      return {
+        price: +d.price,
+        mileage: +d.mileage,
+        origin: d.country,
+        brand: d.brand,
+        model: d.model,
+        year: +d.year
+      };
+    });
+
+    const svg = d3.select("svg");
+    const margin = {top: 40, right: 40, bottom: 60, left: 70};
+    const width = +svg.attr("width") - margin.left - margin.right;
+    const height = +svg.attr("height") - margin.top - margin.bottom;
+
+    const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleLog()
+      .domain([1e3, d3.max(data, d => d.mileage)]).nice()
+      .range([0, width]);
+
+    const y = d3.scaleLinear()
+      .domain([0, d3.max(data, d => d.price)]).nice()
+      .range([height, 0]);
+
+    const color = d3.scaleOrdinal()
+      .domain(["American", "Japanese", "German", "Korean", "Other country"])
+      .range(["#1f77b4", "#d62728", "#2ca02c", "#ff7f0e", "#9467bd"]);
+
+    g.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x).ticks(10, "~s"));
+
+    g.append("g")
+      .call(d3.axisLeft(y));
+
+    g.append("text")
+      .attr("x", width / 2)
+      .attr("y", height + 40)
+      .attr("text-anchor", "middle")
+      .text("Mileage (log scale)");
+
+    g.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -height / 2)
+      .attr("y", -50)
+      .attr("text-anchor", "middle")
+      .text("Price (USD)");
+
+    g.selectAll("circle")
+      .data(data.filter(d => d.price > 0 && d.mileage > 0))
+      .enter().append("circle")
+      .attr("cx", d => x(d.mileage))
+      .attr("cy", d => y(d.price))
+      .attr("r", 3)
+      .attr("fill", d => color(d.origin))
+      .attr("opacity", 0.6);
+
+    // Optional annotation for a specific point
+    const topToyota = data.find(d => d.brand.toLowerCase() === "toyota" && d.model.toLowerCase().includes("cruiser"));
+
+    if (topToyota) {
+      const annotations = d3.annotation()
+        .type(d3.annotationLabel)
+        .annotations([{
+          note: {
+            title: "Toyota Cruiser",
+            label: `Mileage: ${Math.round(topToyota.mileage)}, Price: $${Math.round(topToyota.price)}`
+          },
+          x: x(topToyota.mileage) + margin.left,
+          y: y(topToyota.price) + margin.top,
+          dx: 40,
+          dy: -30
+        }]);
+
+      svg.append("g")
+        .attr("class", "annotation-group")
+        .call(annotations);
+    }
+  }
+  </script>
 </body>
 </html>
