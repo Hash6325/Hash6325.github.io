@@ -23,12 +23,10 @@
   <button onclick="scene1()">Slide 1</button> 
   <button onclick="scene2()">Slide 2</button> 
   <button onclick="scene3()">Slide 3</button> <br>
-  
-  <!-- Filters for Scene 2 -->
-
 
   <svg width="750" height="450"></svg>
-    <div id="filters" style="display:none; margin-bottom:10px;">
+  
+  <div id="filters" style="display:none; margin-bottom:10px;">
   <label for="origin">Origin:</label>
   <select id="origin">
     <option value="all">All</option>
@@ -38,7 +36,7 @@
   <select id="year">
     <option value="all">All</option>
   </select>
-</div>
+  </div>
   <script>
 
   let data = [];
@@ -60,7 +58,7 @@
 
   function scene1() {
     d3.select("svg").html("");
-       document.getElementById("filters").style.display = "none";
+    document.getElementById("filters").style.display = "none";
     document.getElementById("scene-title").textContent = "Car Origin Distribution";
     document.getElementById("scene-desc").textContent = "This pie chart offers an overview of the distribution of used cars in the dataset used for this analysis, categorized by country of origin. Each slice represents a different origin group—American, Japanese, German, Korean, or Other—proportional to its presence in the dataset. It is clear that American car brands dominate this dataset and most of the remaining is made up of Japanese brands. A small percentage comes from Germany and Korea as well.";
 
@@ -98,14 +96,13 @@
   .attr("fill", d => color(d.data.origin))
   .style("stroke-width", "2px")
   .on("mouseover", function(event, d) {
-      // Get models inside this origin
-      const models = data.filter(c => c.origin === d.data.origin);
-      const total = models.length;
+      const brands = data.filter(c => c.origin === d.data.origin);
+      const total = brands.length;
 
       // Group by model
-      const modelCounts = d3.rollup(models, v => v.length, c => c.model);
-      const modelData = Array.from(modelCounts, ([model, count]) => ({
-        model,
+      const brandCounts = d3.rollup(brands, v => v.length, c => c.brand);
+      const brandData = Array.from(brandCounts, ([brand, count]) => ({
+        brand,
         percent: ((count / total) * 100).toFixed(1)
       }))
       // sort by % desc and keep top 5 for readability
@@ -114,7 +111,7 @@
 
       // Build HTML for tooltip
       const html = `<strong>${d.data.origin}</strong><br>` +
-                   modelData.map(m => `${m.model}: ${m.percent}%`).join("<br>");
+                   brandData.map(b => `${b.brand}: ${b.percent}%`).join("<br>");
 
       d3.select("#tooltip")
         .style("display", "block")
@@ -183,27 +180,156 @@
     });
   }
 
-  function scene2(){
-   // Clear SVG and show filters
-    d3.select("svg").html("");
-       document.getElementById("filters").style.display = "none";
-    document.getElementById("filters").style.display = "block";
-    document.getElementById("scene-title").textContent = "Scene 2 - Average Price by Brand";
-    document.getElementById("scene-desc").textContent = "This bar chart shows the average price of cars grouped by brand, with filters for origin and year.";
 
+function scene2(){
+  d3.select("svg").html("");
+  document.getElementById("filters").style.display = "none";
+  document.getElementById("scene-title").textContent = "Mileage vs. Price by Country of Origin";
+  document.getElementById("scene-desc").textContent = "Here we can see the relationship between mileage and price for used cars, categorized by country of origin. Each dot represents a vehicle, with color indicating its origin—American, Japanese, German, Korean, or Other. The scatterplot shows a clear downward trend: as mileage increases, price tends to decrease.";
+
+  const svg = d3.select("svg");
+  const margin = {top: 40, right: 140, bottom: 60, left: 70};
+  const width = +svg.attr("width") - margin.left - margin.right;
+  const height = +svg.attr("height") - margin.top - margin.bottom;
+
+  const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleLinear().domain([0, 250000]).range([0, width]);
+  const y = d3.scaleLinear().domain([0, d3.max(data, d => d.price)]).range([height, 0]);
+
+  const color = d3.scaleOrdinal()
+    .domain(["American", "Japanese", "German", "Korean", "Other country"])
+    .range(["blue", "red", "green", "orange", "purple"]);
+
+  g.append("g")
+    .attr("transform", `translate(0,${height})`)
+    .call(d3.axisBottom(x));
+
+  g.append("g").call(d3.axisLeft(y));
+
+  g.append("text")
+    .attr("x", width / 2)
+    .attr("y", height + 40)
+    .attr("text-anchor", "middle")
+    .text("Mileage");
+
+  g.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -height / 2)
+    .attr("y", -50)
+    .attr("text-anchor", "middle")
+    .text("Price (USD)");
+
+  const tooltip = d3.select("#tooltip");
+
+  const circles = g.selectAll("circle")
+    .data(data.filter(d => d.price > 0 && d.mileage > 0 && d.mileage < 250000),
+          d => d.brand + d.model + d.year);
+
+  circles.join(
+    enter => enter.append("circle")
+                  .attr("cx", d => x(d.mileage))
+                  .attr("cy", d => y(d.price))
+                  .attr("r", 2)
+                  .attr("fill", d => color(d.origin))
+                  .attr("opacity", 0)
+                  .on("mouseover", function(event, d) {
+                    tooltip.style("display", "block")
+                           .html(`<strong>${d.year} ${d.brand} ${d.model}</strong><br>Mileage: ${d.mileage}<br>Price: $${d.price}`);
+                    d3.select(this).attr("r", 4).attr("stroke", "#000");
+                  })
+                  .on("mousemove", function(event) {
+                    tooltip.style("left", (event.pageX + 10) + "px")
+                           .style("top", (event.pageY - 28) + "px");
+                  })
+                  .on("mouseout", function() {
+                    tooltip.style("display", "none");
+                    d3.select(this).attr("r", 2).attr("stroke", null);
+                  })
+                  .transition().duration(800)
+                  .attr("opacity", 0.4),
+    update => update.transition().duration(800)
+                    .attr("cx", d => x(d.mileage))
+                    .attr("cy", d => y(d.price)),
+    exit => exit.transition().duration(800)
+                .attr("opacity", 0)
+                .remove()
+  );
+
+ 
+    //American
+    g.append("line")
+     
+      .attr("x1", x(0))
+      .attr("y1", y(27377))
+      .attr("x2", x(194126))
+      .attr("y2", y(0))
+      .style("stroke", "blue")
+      .style("stroke-width", 3);
+    //Japanese
+    g.append("line")
+      .attr("x1", x(0))
+      .attr("y1", y(16021))
+      .attr("x2", x(182955))
+      .attr("y2", y(0))
+      .style("stroke", "red")
+      .style("stroke-width", 3);
+    //German
+    g.append("line")
+      .attr("x1", x(0))
+      .attr("y1", y(42611))
+      .attr("x2", x(118163))
+      .attr("y2", y(0))
+      .style("stroke", "green")
+      .style("stroke-width", 3);
+    //Korean
+    g.append("line")
+      .attr("x1", x(0))
+      .attr("y1", y(10176))
+      .attr("x2", x(280896))
+      .attr("y2", y(0))
+      .style("stroke", "orange")
+      .style("stroke-width", 3); 
+      
+
+  const legend = g.append("g")
+    .attr("transform", `translate(${width - 100}, 0)`);
+
+  color.domain().forEach((origin, i) => {
+    const row = legend.append("g")
+      .attr("transform", `translate(0, ${i * 20})`);
+
+    row.append("rect")
+      .attr("width", 12)
+      .attr("height", 12)
+      .attr("fill", color(origin));
+
+    row.append("text")
+      .attr("x", 18)
+      .attr("y", 10)
+      .text(origin);
+  });
+}
+function scene3(){
+
+    d3.select("svg").html("");
+    document.getElementById("scene-title").textContent = "Average Price by Brand";
+    document.getElementById("scene-desc").textContent = "In this scene, you're looking at a bar chart that shows the average price of used cars for each brand in the dataset. Each bar is colored based on the car's country of origin, just like in the previous scenes. You can use the dropdown filters to focus on a specific origin or production year if you want to narrow things down. This view gives you a clearer idea of how car brands compare in terms of pricing, and how factors like origin or year might affect those averages.";
+    document.getElementById("filters").style.display = "none";
+    document.getElementById("filters").style.display = "block";
     const svg = d3.select("svg");
-    const margin = {top: 30, right: 30, bottom: 80, left: 70};
-    const width = +svg.attr("width") - margin.left - margin.right;
-    const height = +svg.attr("height") - margin.top - margin.bottom;
+    const margin = 50;
+    const width = +svg.attr("width") - 2*margin;
+    const height = +svg.attr("height") - 2*margin;
 
     const chartGroup = svg.append("g")
-                          .attr("transform", `translate(${margin.left},${margin.top})`);
+                          .attr("transform", "translate("+margin+","+margin+")");
 
     const x = d3.scaleBand().range([0, width]).padding(0.2);
     const y = d3.scaleLinear().range([height, 0]);
 
     const xAxisGroup = chartGroup.append("g")
-                                 .attr("transform", `translate(0,${height})`);
+                                 .attr("transform", "translate(0,"+height+")");
     const yAxisGroup = chartGroup.append("g");
 
     // Populate filters only once (if not already)
@@ -302,139 +428,6 @@ function updateChart(filteredData) {
     // Initial chart
     updateChart(data);
   }
-
-function scene3(){
-  d3.select("svg").html("");
-  document.getElementById("filters").style.display = "none";
-  document.getElementById("scene-title").textContent = "Mileage vs. Price by Country of Origin";
-  document.getElementById("scene-desc").textContent = "Here we can see the relationship between mileage and price for used cars, categorized by country of origin. Each dot represents a vehicle, with color indicating its origin—American, Japanese, German, Korean, or Other. The scatterplot shows a clear downward trend: as mileage increases, price tends to decrease.";
-
-  const svg = d3.select("svg");
-  const margin = {top: 40, right: 140, bottom: 60, left: 70};
-  const width = +svg.attr("width") - margin.left - margin.right;
-  const height = +svg.attr("height") - margin.top - margin.bottom;
-
-  const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-
-  const x = d3.scaleLinear().domain([0, 250000]).range([0, width]);
-  const y = d3.scaleLinear().domain([0, d3.max(data, d => d.price)]).range([height, 0]);
-
-  const color = d3.scaleOrdinal()
-    .domain(["American", "Japanese", "German", "Korean", "Other country"])
-    .range(["blue", "red", "green", "orange", "purple"]);
-
-  g.append("g")
-    .attr("transform", `translate(0,${height})`)
-    .call(d3.axisBottom(x));
-
-  g.append("g").call(d3.axisLeft(y));
-
-  g.append("text")
-    .attr("x", width / 2)
-    .attr("y", height + 40)
-    .attr("text-anchor", "middle")
-    .text("Mileage");
-
-  g.append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -height / 2)
-    .attr("y", -50)
-    .attr("text-anchor", "middle")
-    .text("Price (USD)");
-
-  const tooltip = d3.select("#tooltip");
-
-  // --- Circles with fade and tooltip ---
-  const circles = g.selectAll("circle")
-    .data(data.filter(d => d.price > 0 && d.mileage > 0 && d.mileage < 250000),
-          d => d.brand + d.model + d.year);
-
-  circles.join(
-    enter => enter.append("circle")
-                  .attr("cx", d => x(d.mileage))
-                  .attr("cy", d => y(d.price))
-                  .attr("r", 2)
-                  .attr("fill", d => color(d.origin))
-                  .attr("opacity", 0)
-                  .on("mouseover", function(event, d) {
-                    tooltip.style("display", "block")
-                           .html(`<strong>${d.year} ${d.brand} ${d.model}</strong><br>Mileage: ${d.mileage}<br>Price: $${d.price}`);
-                    d3.select(this).attr("r", 4).attr("stroke", "#000");
-                  })
-                  .on("mousemove", function(event) {
-                    tooltip.style("left", (event.pageX + 10) + "px")
-                           .style("top", (event.pageY - 28) + "px");
-                  })
-                  .on("mouseout", function() {
-                    tooltip.style("display", "none");
-                    d3.select(this).attr("r", 2).attr("stroke", null);
-                  })
-                  .transition().duration(800)
-                  .attr("opacity", 0.4),
-    update => update.transition().duration(800)
-                    .attr("cx", d => x(d.mileage))
-                    .attr("cy", d => y(d.price)),
-    exit => exit.transition().duration(800)
-                .attr("opacity", 0)
-                .remove()
-  );
-
- 
-    //American
-    g.append("line")
-     
-      .attr("x1", x(0))
-      .attr("y1", y(27377))
-      .attr("x2", x(194126))
-      .attr("y2", y(0))
-      .style("stroke", "blue")
-      .style("stroke-width", 3);
-    //Japanese
-    g.append("line")
-      .attr("x1", x(0))
-      .attr("y1", y(16021))
-      .attr("x2", x(182955))
-      .attr("y2", y(0))
-      .style("stroke", "red")
-      .style("stroke-width", 3);
-    //German
-    g.append("line")
-      .attr("x1", x(0))
-      .attr("y1", y(42611))
-      .attr("x2", x(118163))
-      .attr("y2", y(0))
-      .style("stroke", "green")
-      .style("stroke-width", 3);
-    //Korean
-    g.append("line")
-      .attr("x1", x(0))
-      .attr("y1", y(10176))
-      .attr("x2", x(280896))
-      .attr("y2", y(0))
-      .style("stroke", "orange")
-      .style("stroke-width", 3); 
-      
-
-  // --- Legend ---
-  const legend = g.append("g")
-    .attr("transform", `translate(${width - 100}, 0)`);
-
-  color.domain().forEach((origin, i) => {
-    const row = legend.append("g")
-      .attr("transform", `translate(0, ${i * 20})`);
-
-    row.append("rect")
-      .attr("width", 12)
-      .attr("height", 12)
-      .attr("fill", color(origin));
-
-    row.append("text")
-      .attr("x", 18)
-      .attr("y", 10)
-      .text(origin);
-  });
-}
-
   </script>
 <div id="tooltip" style="position:absolute; padding:6px; font-size:12px; background:white; border:1px solid #999; border-radius:4px; pointer-events:none; display:none;"></div>
 
