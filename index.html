@@ -220,39 +220,43 @@ function scene2(){
 
   const tooltip = d3.select("#tooltip");
 
-  const circles = g.selectAll("circle")
-    .data(data.filter(d => d.price > 0 && d.mileage > 0 && d.mileage < 250000),
-          d => d.brand + d.model + d.year);
+  const filtered = data.filter(d => d.price > 0 && d.mileage > 0 && d.mileage < 250000);
+  
+  g.selectAll(".dot")
+    .data(filtered, d => d.brand + d.model + d.year)
+    .join("circle")
+    .attr("class", "dot")
+    .attr("cx", d => x(d.mileage))
+    .attr("cy", d => y(d.price))
+    .attr("r", 2)
+    .attr("fill", d => color(d.origin))
+    .attr("opacity", 0.4);
+  
+  g.selectAll(".detection")
+    .data(filtered, d => d.brand + d.model + d.year)
+    .join("circle")
+    .attr("cx", d => x(d.mileage))
+    .attr("cy", d => y(d.price))
+    .attr("r", 10) 
+    .attr("fill", "transparent")
+    .on("mouseover", function(event, d) {
+      tooltip.style("display", "block")
+             .html(`<strong>${d.year} ${d.brand} ${d.model}</strong><br>Mileage: ${d.mileage}<br>Price: $${d.price}`);
+      g.selectAll(".dot")
+        .filter(p => p === d)
+        .attr("r", 4);
+    })
+    .on("mousemove", function(event) {
+      tooltip.style("left", (event.pageX + 10) + "px")
+             .style("top", (event.pageY - 30) + "px");
+    })
+    .on("mouseout", function(event, d) {
+      tooltip.style("display", "none");
+      g.selectAll(".dot")
+        .filter(p => p === d)
+        .attr("r", 2);
+    });
 
-  circles.join(
-    enter => enter.append("circle")
-                  .attr("cx", d => x(d.mileage))
-                  .attr("cy", d => y(d.price))
-                  .attr("r", 2)
-                  .attr("fill", d => color(d.origin))
-                  .attr("opacity", 0)
-                  .on("mouseover", function(event, d) {
-                    tooltip.style("display", "block")
-                           .html(`<strong>${d.year} ${d.brand} ${d.model}</strong><br>Mileage: ${d.mileage}<br>Price: $${d.price}`);
-                    d3.select(this).attr("r", 4)
-                  })
-                  .on("mousemove", function(event) {
-                    tooltip.style("left", (event.pageX + 10) + "px")
-                           .style("top", (event.pageY - 28) + "px");
-                  })
-                  .on("mouseout", function() {
-                    tooltip.style("display", "none");
-                    d3.select(this).attr("r", 2)
-                  })
-                  .transition().duration(800)
-                  .attr("opacity", 0.4),
-    update => update.attr("cx", d => x(d.mileage))
-                  .attr("cy", d => y(d.price)),
-    exit => exit.attr("opacity", 0)
-              .remove()
-  );
-
- 
     //American
     g.append("line")
      
